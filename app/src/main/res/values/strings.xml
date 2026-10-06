@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Portal RUT</string>
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_subtitle">Ingresa con tu RUT y contraseña para acceder a tus servicios</string>
+    <string name="label_rut">RUT</string>
+    <string name="placeholder_rut">12.345.678-K</string>
+    <string name="helper_rut">Ingresa tu RUT sin puntos o con guion</string>
+    <string name="label_password">Contraseña</string>
+    <string name="placeholder_password">Ingresa tu contraseña</string>
+    <string name="remember_rut">Recordar mi RUT en este dispositivo</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="button_login">Ingresar al Portal</string>
+    <string name="quick_test_accounts">Cuentas de prueba rápida:</string>
+    <string name="error_rut_empty">Por favor ingresa tu RUT.</string>
+    <string name="error_rut_invalid">El RUT ingresado no es válido (dígito verificador incorrecto).</string>
+    <string name="error_rut_format">Formato de RUT no reconocido. Ejemplo: 12.345.678-5</string>
+    <string name="error_password_empty">Por favor ingresa tu contraseña.</string>
+    <string name="error_password_short">La contraseña debe tener al menos 4 caracteres.</string>
+    <string name="error_credentials">Credenciales incorrectas. Verifica el RUT o la contraseña ingresada.</string>
+    <string name="security_badge">Conexión Segura con Validación Módulo 11</string>
+</resources>

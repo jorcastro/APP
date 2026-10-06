@@ -1,0 +1,6 @@
+{
+  "name": "Portal RUT",
+  "description": "Inicio de sesión seguro mediante validación de RUT chileno y contraseña.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
