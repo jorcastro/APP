@@ -46,7 +46,7 @@ object RutUtils {
     private fun formatBodyWithDots(body: String): String {
         if (body.isEmpty()) return ""
         val parsed = body.toLongOrNull() ?: return body
-        val symbols = DecimalFormatSymbols(Locale("es", "CL")).apply {
+        val symbols = DecimalFormatSymbols(Locale.forLanguageTag("es-CL")).apply {
             groupingSeparator = '.'
         }
         val formatter = DecimalFormat("#,###", symbols)

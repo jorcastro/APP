@@ -26,11 +26,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
@@ -196,7 +197,7 @@ fun LoginScreen(
                     modifier = Modifier.testTag("demo_accounts_button")
                 ) {
                     Icon(
-                        imageVector = Icons.Default.HelpOutline,
+                        imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                         contentDescription = "Ver Cuentas",
                         modifier = Modifier.size(16.dp)
                     )
@@ -212,13 +213,25 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 DemoAccountsRepository.accounts.take(2).forEach { demo ->
+                    val isAdminAccount = demo.role.contains("Admin", ignoreCase = true)
                     FilterChip(
                         selected = uiState.rut == demo.rut,
                         onClick = { viewModel.selectDemoAccount(demo) },
+                        leadingIcon = if (isAdminAccount) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.AdminPanelSettings,
+                                    contentDescription = "Admin",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        } else null,
                         label = {
                             Text(
-                                text = demo.name.split(" ").first(),
-                                style = MaterialTheme.typography.labelSmall
+                                text = if (isAdminAccount) "${demo.name.split(" ").first()} (Admin)" else demo.name.split(" ").first(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (isAdminAccount) FontWeight.Bold else FontWeight.Normal
                             )
                         },
                         modifier = Modifier.testTag("quick_chip_${demo.rut}")
@@ -515,13 +528,35 @@ fun LoginScreen(
                             )
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = account.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (account.role.contains("Admin", ignoreCase = true)) {
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer
+                                        ) {
+                                            Text(
+                                                text = "ADMINISTRADOR",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                fontSize = 9.sp
+                                            )
+                                        }
+                                    }
+                                }
                                 Text(
-                                    text = account.name,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "RUT: ${account.rut}",
+                                    text = "RUT: ${account.rut} • ${account.role}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )

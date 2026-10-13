@@ -47,4 +47,49 @@ class RutValidationUnitTest {
         assertFalse(RutUtils.isValid("12345678-9"))   // wrong DV
         assertFalse(RutUtils.isValid("19.876.543-2")) // wrong DV (should be 0)
     }
+
+    @Test
+    fun testUserIsAdminCheck() {
+        val adminUser = com.example.model.User(
+            name = "Valentina Paz",
+            rut = "19.876.543-0",
+            email = "v@institucional.cl",
+            role = "Administradora de Casino y Turnos",
+            loginTime = "06/10/2026 10:00:00"
+        )
+        assertTrue(adminUser.isAdmin)
+
+        val studentUser = com.example.model.User(
+            name = "Juan Pérez",
+            rut = "12.345.678-5",
+            email = "j@alumnos.cl",
+            role = "Estudiante (Ing. Civil Informática)",
+            loginTime = "06/10/2026 10:00:00"
+        )
+        assertFalse(studentUser.isAdmin)
+    }
+
+    @Test
+    fun testStudentShiftUpdateAndLunch() {
+        val repository = com.example.model.StudentRepository
+        val firstStudent = repository.students.value.first()
+
+        val newShift = "Salida al Almuerzo"
+        repository.updateShift(firstStudent.id, newShift)
+
+        val updatedStudent = repository.students.value.first { it.id == firstStudent.id }
+        assertEquals(newShift, updatedStudent.shift)
+
+        // Verify lunch number assignment
+        val initialLunch = updatedStudent.willHaveLunch
+        if (initialLunch) {
+            assertTrue(updatedStudent.lunchNumber != null && updatedStudent.lunchNumber > 0)
+        }
+        repository.toggleLunch(firstStudent.id)
+        val toggledStudent = repository.students.value.first { it.id == firstStudent.id }
+        assertEquals(!initialLunch, toggledStudent.willHaveLunch)
+        if (!toggledStudent.willHaveLunch) {
+            assertEquals(null, toggledStudent.lunchNumber)
+        }
+    }
 }

@@ -195,7 +195,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 RutUtils.cleanRut(it.rut) == cleanRut
             }
 
-            val currentTime = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale("es", "CL")).format(Date())
+            val currentTime = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.forLanguageTag("es-CL")).format(Date())
 
             val user = if (matchedAccount != null) {
                 User(
@@ -208,10 +208,10 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             } else {
                 // Generates authenticated profile for any mathematically valid Chilean RUT
                 User(
-                    name = "Usuario Contribuyente",
+                    name = "Estudiante Liceo",
                     rut = formattedRut,
-                    email = "usuario.${cleanRut.take(6)}@portal.cl",
-                    role = "Ciudadano Autenticado",
+                    email = "alumno.${cleanRut.take(6)}@liceo.cl",
+                    role = "Estudiante Regular (Liceo)",
                     loginTime = currentTime
                 )
             }

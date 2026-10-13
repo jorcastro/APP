@@ -2,6 +2,7 @@ package com.example.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,16 +20,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LockReset
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,16 +39,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +64,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.StudentRepository
 import com.example.model.User
 import com.example.ui.theme.ValidGreen
 import kotlinx.coroutines.launch
@@ -67,52 +76,132 @@ fun DashboardScreen(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Handle Android system back press to cleanly logout and return to login
+    // If user is Admin, start at the Admin Panel tab (tab 0), otherwise normal student view
+    var selectedTab by remember { mutableIntStateOf(if (user.isAdmin) 0 else 1) }
+
+    // Handle system back press
     BackHandler {
-        onLogout()
+        if (user.isAdmin && selectedTab == 0) {
+            onLogout()
+        } else if (user.isAdmin && selectedTab == 1) {
+            selectedTab = 0
+        } else {
+            onLogout()
+        }
     }
 
+    if (user.isAdmin && selectedTab == 0) {
+        AdminPanelScreen(
+            user = user,
+            onBack = { selectedTab = 1 },
+            onLogout = onLogout,
+            modifier = modifier
+        )
+    } else {
+        StudentPortalView(
+            user = user,
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            onLogout = onLogout,
+            modifier = modifier
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StudentPortalView(
+    user: User,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    onLogout: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+
+    // Query student record matching logged-in user
+    val students by StudentRepository.students.collectAsState()
+    val cleanUserRut = user.rut.replace(".", "").replace("-", "")
+    val myStudentRecord = students.firstOrNull {
+        it.rut.replace(".", "").replace("-", "").equals(cleanUserRut, ignoreCase = true)
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Shield,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Portal Ciudadano",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = onLogout,
-                        modifier = Modifier.testTag("logout_icon_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Cerrar sesión",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+            Column {
+                TopAppBar(
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.School,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Portal Estudiantil",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = onLogout,
+                            modifier = Modifier.testTag("logout_icon_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Cerrar sesión",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            )
+
+                // If admin, show tabs to switch between Admin Panel and Student Portal
+                if (user.isAdmin) {
+                    PrimaryTabRow(
+                        selectedTabIndex = selectedTab,
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ) {
+                        Tab(
+                            selected = selectedTab == 0,
+                            onClick = { onTabSelected(0) },
+                            text = { Text("Panel de Estudiantes", fontWeight = FontWeight.Bold) },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.AdminPanelSettings,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            modifier = Modifier.testTag("admin_tab_button")
+                        )
+                        Tab(
+                            selected = selectedTab == 1,
+                            onClick = { onTabSelected(1) },
+                            text = { Text("Mi Cuenta", fontWeight = FontWeight.Bold) },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.School,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            modifier = Modifier.testTag("student_tab_button")
+                        )
+                    }
+                }
+            }
         }
     ) { paddingValues ->
         Box(
@@ -131,7 +220,55 @@ fun DashboardScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // User Identity Card
+                // Admin Banner if user is Admin
+                if (user.isAdmin) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onTabSelected(0) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AdminPanelSettings,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Panel de Administrador de Estudiantes",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "Gestiona turnos, jornadas y almuerzos del alumnado",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                            }
+                            Button(
+                                onClick = { onTabSelected(0) },
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.testTag("go_to_admin_panel_button")
+                            ) {
+                                Text("Abrir")
+                            }
+                        }
+                    }
+                }
+
+                // Student Identity Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
@@ -215,6 +352,126 @@ fun DashboardScreen(
                     }
                 }
 
+                // Assigned Shift & Lunch Status for this student (if registered in roster)
+                myStudentRecord?.let { record ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Mi Turno y Casino",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                if (user.isAdmin) {
+                                    TextButton(onClick = { onTabSelected(0) }) {
+                                        Text("Gestionar en Panel", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Curso Liceo:",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = record.course,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Jornada asignada:",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                StudentShiftBadge(shift = record.shift)
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Almuerzo en Casino:",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                StudentLunchStatusBadge(
+                                    willHaveLunch = record.willHaveLunch,
+                                    lunchNumber = record.lunchNumber,
+                                    preference = record.lunchPreference
+                                )
+                            }
+
+                            if (record.willHaveLunch && record.lunchNumber != null) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Número de almuerzo asignado:",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = ValidGreen.copy(alpha = 0.15f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, ValidGreen)
+                                    ) {
+                                        Text(
+                                            text = "N° ${record.lunchNumber}",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = ValidGreen,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Security & Validation Details Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -267,7 +524,7 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Hora de inicio:",
+                                text = "Hora de ingreso:",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -297,9 +554,9 @@ fun DashboardScreen(
                     }
                 }
 
-                // Portal Services Section
+                // Student Services Section
                 Text(
-                    text = "Servicios Disponibles",
+                    text = "Servicios Estudiantiles",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
@@ -308,31 +565,31 @@ fun DashboardScreen(
                 )
 
                 ServiceOptionTile(
-                    icon = Icons.Default.Assignment,
-                    title = "Certificados en Línea",
-                    subtitle = "Nacimiento, matrimonio y antecedentes",
+                    icon = Icons.AutoMirrored.Filled.Assignment,
+                    title = "Certificado de Alumno Regular",
+                    subtitle = "Descarga inmediata de comprobante de matrícula",
                     onClick = {
                         scope.launch {
-                            snackbarHostState.showSnackbar("Accediendo a Certificados en Línea para RUT ${user.rut}")
+                            snackbarHostState.showSnackbar("Generando Certificado de Alumno Regular para RUT ${user.rut}")
                         }
                     }
                 )
 
                 ServiceOptionTile(
-                    icon = Icons.Default.ReceiptLong,
-                    title = "Estado de Trámites",
-                    subtitle = "Consulta de solicitudes y pagos registrados",
+                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                    title = "Beneficios y Becas (JUNAEB)",
+                    subtitle = "Consulta de saldo de tarjeta y asignación de casino",
                     onClick = {
                         scope.launch {
-                            snackbarHostState.showSnackbar("Consultando trámites activos...")
+                            snackbarHostState.showSnackbar("Consultando estado de becas y casino...")
                         }
                     }
                 )
 
                 ServiceOptionTile(
                     icon = Icons.Default.LockReset,
-                    title = "Seguridad y Clave",
-                    subtitle = "Actualizar contraseña o gestionar accesos",
+                    title = "Seguridad y Clave Estudiantil",
+                    subtitle = "Actualizar contraseña de acceso institucional",
                     onClick = {
                         scope.launch {
                             snackbarHostState.showSnackbar("Ajustes de seguridad disponibles")
